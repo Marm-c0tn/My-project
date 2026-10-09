@@ -1,1 +1,355 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StreamFlix - Unlimited Movies & Series</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            red: '#E50914',
+                            darkRed: '#B81D24',
+                            black: '#141414',
+                            cardBg: '#181818',
+                            grayHover: '#2A2A2A'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
+    <style>
+        /* Custom scrollbar for modern sleek aesthetic */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #141414;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333333;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #E50914;
+        }
+        
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Hero dynamic gradient overlays */
+        .hero-gradient-overlay {
+            background: linear-gradient(0deg, #141414 0%, rgba(20,20,20,0.7) 40%, rgba(20,20,20,0.2) 100%),
+                        linear-gradient(90deg, #141414 0%, rgba(20,20,20,0.8) 35%, rgba(20,20,20,0) 100%);
+        }
+
+        .card-zoom:hover img {
+            transform: scale(1.08);
+        }
+
+        /* Glassmorphism utility */
+        .glass-nav {
+            background: rgba(20, 20, 20, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        /* Custom Modal Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.25s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-brand-black text-white font-sans antialiased min-h-screen selection:bg-brand-red selection:text-white flex flex-col justify-between">
+
+    <!-- TOP NAVIGATION BAR -->
+    <header id="mainNav" class="fixed top-0 left-0 right-0 z-40 transition-colors duration-300 px-4 md:px-12 py-4 flex items-center justify-between glass-nav">
+        <div class="flex items-center space-x-8">
+            <!-- Brand Logo -->
+            <a href="#" class="flex items-center space-x-2 text-brand-red font-black text-2xl md:text-3xl tracking-wider hover:opacity-90 transition">
+                <i class="fa-solid font-bold fa-play-circle text-brand-red"></i>
+                <span>STREAMFLIX</span>
+            </a>
+            
+            <!-- Desktop Category Navigation -->
+            <nav class="hidden md:flex space-x-6 text-sm font-medium text-gray-300">
+                <button onclick="filterCategory('all')" class="nav-category active text-white hover:text-white transition" data-cat="all">Home</button>
+                <button onclick="filterCategory('series')" class="nav-category hover:text-white transition" data-cat="series">TV Shows</button>
+                <button onclick="filterCategory('movies')" class="nav-category hover:text-white transition" data-cat="movies">Movies</button>
+                <button onclick="filterCategory('trending')" class="nav-category hover:text-white transition" data-cat="trending">New & Popular</button>
+                <button onclick="showMyListOnly()" class="nav-category hover:text-white transition relative" data-cat="mylist">
+                    My List
+                    <span id="listBadge" class="hidden absolute -top-2 -right-3 bg-brand-red text-xs px-1.5 py-0.5 rounded-full text-white font-bold">0</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- Right Side Controls (Search, Profile) -->
+        <div class="flex items-center space-x-4 md:space-x-6">
+            <!-- Expandable Search Input -->
+            <div class="relative flex items-center">
+                <button id="searchBtn" onclick="toggleSearchInput()" class="text-gray-300 hover:text-white p-2 focus:outline-none transition">
+                    <i class="fa-solid fa-magnifying-glass text-lg"></i>
+                </button>
+                <input id="searchInput" type="text" placeholder="Titles, genres, cast..." 
+                    class="w-0 opacity-0 transition-all duration-300 bg-black/80 border border-gray-600 focus:border-brand-red text-sm text-white px-3 py-1.5 rounded-md focus:outline-none focus:w-48 md:focus:w-64 focus:opacity-100"
+                    oninput="handleSearch(this.value)">
+            </div>
+
+            <!-- Notifications Dropdown (Decorative UI) -->
+            <div class="relative">
+                <button class="text-gray-300 hover:text-white p-2 transition">
+                    <i class="fa-solid fa-bell text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Profile Avatar with Menu -->
+            <div class="relative group cursor-pointer">
+                <div class="flex items-center space-x-2">
+                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80" 
+                         alt="User Profile" 
+                         class="w-8 h-8 rounded-md object-cover border border-gray-600 group-hover:border-white transition">
+                    <i class="fa-solid fa-caret-down text-xs text-gray-400 group-hover:rotate-180 transition-transform"></i>
+                </div>
+                <!-- Profile Dropdown -->
+                <div class="absolute right-0 mt-2 w-48 bg-brand-cardBg border border-gray-800 rounded-md shadow-2xl py-2 hidden group-hover:block transition z-50">
+                    <div class="px-4 py-2 border-b border-gray-800 text-xs text-gray-400">Signed in as <span class="text-white font-bold block truncate">alex.cinema@streamflix.com</span></div>
+                    <a href="#" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white">Account Settings</a>
+                    <a href="#" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white">Help Center</a>
+                    <button onclick="resetAppList()" class="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-800">Clear My List</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="flex-grow pt-16">
+        <!-- HERO SPOTLIGHT BANNER -->
+        <section id="heroSection" class="relative w-full h-[70vh] md:h-[82vh] flex items-end justify-start overflow-hidden bg-black">
+            <!-- Background Image / Banner -->
+            <div id="heroBg" class="absolute inset-0 bg-cover bg-center transition-all duration-700 transform scale-105"
+                 style="background-image: url('https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?auto=format&fit=crop&w=1920&q=80');">
+            </div>
+            
+            <!-- Dark Gradient Overlays for contrast -->
+            <div class="absolute inset-0 hero-gradient-overlay"></div>
+
+            <!-- Spotlight Content Info -->
+            <div class="relative z-10 px-4 md:px-12 pb-12 max-w-3xl space-y-4">
+                <div class="flex items-center space-x-3 text-xs md:text-sm font-semibold tracking-wide">
+                    <span class="bg-brand-red text-white px-2 py-0.5 rounded text-[10px] uppercase tracking-wider font-extrabold">Featured</span>
+                    <span id="heroType" class="text-gray-300 uppercase tracking-widest">Sci-Fi Epic Series</span>
+                    <span class="text-green-400 font-bold">98% Match</span>
+                    <span class="border border-gray-600 text-gray-300 px-1.5 py-0.2 rounded text-xs">4K Ultra HD</span>
+                </div>
+
+                <h1 id="heroTitle" class="text-3xl md:text-6xl font-extrabold tracking-tight drop-shadow-md leading-none text-white">
+                    CYBERPUNK: OLYMPUS
+                </h1>
+
+                <p id="heroDescription" class="text-sm md:text-base text-gray-300 line-clamp-3 md:line-clamp-4 max-w-2xl font-normal leading-relaxed drop-shadow">
+                    In a futuristic metropolis governed by synthetic conglomerates, a rouge hacker discovers a conspiracy that threatens to rewrite human consciousness.
+                </p>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center space-x-4 pt-2">
+                    <button id="heroPlayBtn" onclick="openTrailerModal('hero')" class="flex items-center space-x-2 bg-white text-black hover:bg-gray-200 transition font-bold px-6 py-3 rounded-md shadow-lg text-sm md:text-base">
+                        <i class="fa-solid fa-play text-lg"></i>
+                        <span>Play Preview</span>
+                    </button>
+                    <button id="heroInfoBtn" onclick="openDetailModal('cyberpunk')" class="flex items-center space-x-2 bg-gray-600/60 hover:bg-gray-600/90 text-white transition font-medium px-6 py-3 rounded-md text-sm md:text-base backdrop-blur-sm">
+                        <i class="fa-solid fa-circle-info text-lg"></i>
+                        <span>More Info</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- FILTER BAR & SEARCH HEADING CONTAINER -->
+        <div class="px-4 md:px-12 py-6">
+            <div id="activeFilterHeading" class="hidden items-center justify-between pb-4 border-b border-gray-800">
+                <h2 id="filterTitleText" class="text-2xl font-bold text-white tracking-wide">Search Results</h2>
+                <button onclick="filterCategory('all')" class="text-xs text-brand-red hover:underline font-semibold flex items-center gap-1">
+                    <i class="fa-solid fa-xmark"></i> Clear Filters
+                </button>
+            </div>
+        </div>
+
+        <!-- CAROUSELS CONTAINER -->
+        <div id="mediaContainer" class="px-4 md:px-12 space-y-10 pb-16">
+            <!-- Row 1: My List (Hidden if empty unless My List tab is clicked) -->
+            <div id="mylistRowSection" class="hidden">
+                <h2 class="text-xl md:text-2xl font-bold text-white mb-4 flex items-center space-x-2">
+                    <i class="fa-solid fa-bookmark text-brand-red"></i>
+                    <span>My Watchlist</span>
+                </h2>
+                <div id="mylistCarousel" class="flex items-center space-x-4 overflow-x-auto hide-scrollbar py-4 scroll-smooth">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+
+            <!-- Row 2: Trending Now -->
+            <div id="trendingRowSection" class="media-section">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-lg md:text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                        <span>Trending Now</span>
+                        <i class="fa-solid fa-fire text-orange-500 text-sm"></i>
+                    </h2>
+                </div>
+                <div class="relative group">
+                    <div id="trendingCarousel" class="flex items-center space-x-4 overflow-x-auto hide-scrollbar py-4 scroll-smooth">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 3: Sci-Fi & Action -->
+            <div id="actionRowSection" class="media-section">
+                <h2 class="text-lg md:text-xl font-bold text-white mb-3 tracking-tight">Sci-Fi & Action Masterpieces</h2>
+                <div class="relative group">
+                    <div id="actionCarousel" class="flex items-center space-x-4 overflow-x-auto hide-scrollbar py-4 scroll-smooth">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 4: Critically Acclaimed TV Series -->
+            <div id="seriesRowSection" class="media-section">
+                <h2 class="text-lg md:text-xl font-bold text-white mb-3 tracking-tight">Binge-Worthy TV Series</h2>
+                <div class="relative group">
+                    <div id="seriesCarousel" class="flex items-center space-x-4 overflow-x-auto hide-scrollbar py-4 scroll-smooth">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- DETAIL & EPISODE MODAL -->
+    <div id="detailModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md overflow-y-auto flex justify-center items-start pt-10 pb-10 px-4">
+        <div class="relative w-full max-w-4xl bg-brand-cardBg rounded-xl overflow-hidden shadow-2xl border border-gray-800 animate-fade-in my-auto">
+            <!-- Modal Close Button -->
+            <button onclick="closeModal('detailModal')" class="absolute top-4 right-4 z-20 bg-black/70 hover:bg-black text-white w-10 h-10 rounded-full flex items-center justify-center transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <!-- Modal Header Poster/Banner -->
+            <div class="relative h-64 md:h-96 w-full bg-cover bg-center" id="modalHeroBg">
+                <div class="absolute inset-0 bg-gradient-to-t from-brand-cardBg via-brand-cardBg/40 to-transparent"></div>
+                <div class="absolute bottom-6 left-6 right-6 flex flex-col md:flex-row items-start md:items-end justify-between gap-4">
+                    <div class="space-y-2 max-w-xl">
+                        <span id="modalBadge" class="bg-brand-red text-white text-xs px-2 py-0.5 rounded font-bold uppercase tracking-wider">Series</span>
+                        <h2 id="modalTitle" class="text-2xl md:text-4xl font-extrabold text-white leading-tight">Title Here</h2>
+                        <div class="flex items-center space-x-3 text-xs md:text-sm text-gray-300 font-medium">
+                            <span id="modalRating" class="text-green-400 font-bold">98% Match</span>
+                            <span id="modalYear">2024</span>
+                            <span id="modalMaturity" class="border border-gray-600 px-1 rounded">TV-MA</span>
+                            <span id="modalDuration">3 Seasons</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button id="modalPlayBtn" class="bg-white text-black hover:bg-gray-200 transition px-5 py-2.5 rounded-md font-bold text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-play"></i> Watch Now
+                        </button>
+                        <button id="modalListBtn" onclick="toggleBookmarkCurrentModal()" class="bg-gray-800/80 hover:bg-gray-700 text-white p-3 rounded-md transition border border-gray-600">
+                            <i id="modalListIcon" class="fa-solid fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Content & Details Tabs -->
+            <div class="p-6 md:p-8 space-y-8">
+                <!-- Overview & Cast Info Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="md:col-span-2 space-y-4">
+                        <h3 class="text-lg font-bold text-white">Overview</h3>
+                        <p id="modalDescription" class="text-gray-300 text-sm leading-relaxed">
+                            Detailed synopsis goes here...
+                        </p>
+                    </div>
+                    <div class="space-y-3 text-xs md:text-sm border-t md:border-t-0 md:border-l border-gray-800 pt-4 md:pt-0 md:pl-6">
+                        <div>
+                            <span class="text-gray-500 block">Genres:</span>
+                            <span id="modalGenres" class="text-gray-200 font-medium">Sci-Fi, Thriller</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-500 block">Creators / Director:</span>
+                            <span id="modalCreators" class="text-gray-200 font-medium">Denis Villeneuve</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-500 block">Audio & Subtitles:</span>
+                            <span class="text-gray-200 font-medium">English [CC], Spanish, French</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cast Cards Section -->
+                <div>
+                    <h3 class="text-base md:text-lg font-bold text-white mb-4">Featured Cast</h3>
+                    <div id="modalCastList" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                        <!-- Dynamic Cast Cards -->
+                    </div>
+                </div>
+
+                <!-- Episode Selector (Visible if series) -->
+                <div id="episodesSection" class="hidden border-t border-gray-800 pt-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-base md:text-lg font-bold text-white">Episodes</h3>
+                        <select id="seasonSelect" class="bg-gray-800 text-white text-sm border border-gray-700 rounded px-3 py-1.5 focus:outline-none focus:border-brand-red">
+                            <option value="1">Season 1</option>
+                            <option value="2">Season 2</option>
+                        </select>
+                    </div>
+                    <div id="episodesList" class="space-y-3">
+                        <!-- Dynamic Episodes List -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PLAYABLE VIDEO / TRAILER PREVIEW MODAL -->
+    <div id="trailerModal" class="fixed inset-0 z-50 hidden bg-black/95 flex items-center justify-center p-2 md:p-8">
+        <div class="relative w-full max-w-5xl bg-black rounded-lg overflow-hidden shadow-2xl border border-gray-800">
+            <!-- Modal Controls -->
+            <div class="absolute top-4 right-4 z-30 flex items-center space-x-3">
+                <button onclick="closeModal('trailerModal')" class="bg-black/70 hover:bg-brand-red text-white w-10 h-10 rounded-full flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            <!-- Video Container -->
+            <div class="relative aspect-video w-full bg-black flex items-center justify-center">
+                <iframe id="trailerIframe" class="w-full h-full border-0" 
+                        src="" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowfullscreen>
+                </iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- MOBILE BOTTOM NAVIGATION -->
+    <div class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-brand-black/95 border-t border-gray-800 flex items-center justify-around py-3 px-2 backdrop-blur-lg">
+        <button
